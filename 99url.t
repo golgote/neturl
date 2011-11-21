@@ -115,16 +115,14 @@ local test2 = {
 ["/foo/../bar"] = "/bar",
 ["/foo//"] = "/foo/",
 ["/foo///bar//"] = "/foo/bar/",
---["http://www.foo.com:80/foo"] = "http://www.foo.com/foo",
+["http://www.foo.com:80/foo"] = "http://www.foo.com/foo",
 ["http://www.foo.com/foo/../foo"] = "http://www.foo.com/foo",
 ["http://www.foo.com:8000/foo"] = "http://www.foo.com:8000/foo",
---["http://www.foo.com./foo/bar.html"] = "http://www.foo.com/foo/bar.html",
---["http://www.foo.com.:81/foo"] = "http://www.foo.com:81/foo",
 ["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
 ["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
---["http://www.example.com./"] = "http://www.example.com/",
-["-"] = "-",
-["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529&",
+ -- not sure which result I should get here
+ --["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529&",
+ --["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529&#038;cpage=1#comment-783",
 ["/foo/bar/../../../baz"] = "/baz",
 ["/foo/bar/../../../../baz"] = "/baz",
 ["/./../foo"] = "/foo",
@@ -143,13 +141,13 @@ end
 
 
 
---[[
+
 
 
 local test2 = {
 	["http://:@example.com/"] = "http://example.com/",
 	["http://@example.com/"] = "http://example.com/",
-	["http://example.com"] = "http://example.com/",
+	["http://example.com"] = "http://example.com",
 	["HTTP://example.com/"] = "http://example.com/",
 	["http://EXAMPLE.COM/"] = "http://example.com/",
 	["http://example.com/%7Ejane"] = "http://example.com/~jane",
@@ -164,7 +162,20 @@ local test2 = {
 	["http://example.com/~jane"] = "http://example.com/~jane",
 	["http://example.com/a/b"] = "http://example.com/a/b",
 	["http://example.com:8080/"] = "http://example.com:8080/",
-	["http://user:password@example.com/"] = "http://user:password@example.com/"
+	["http://user:password@example.com/"] = "http://user:password@example.com/",
+	["http://www.ietf.org/rfc/rfc2396.txt"] = "http://www.ietf.org/rfc/rfc2396.txt",
+	["telnet://192.0.2.16:80/"] = "telnet://192.0.2.16:80/",
+	["ftp://ftp.is.co.za/rfc/rfc1808.txt"] = "ftp://ftp.is.co.za/rfc/rfc1808.txt",
+	["ldap://[2001:db8::7]/c=GB?objectClass?one"] = "ldap://[2001:db8::7]/c=GB?objectClass?one",
+	["mailto:John.Doe@example.com"] = "mailto:John.Doe@example.com",
+	["news:comp.infosystems.www.servers.unix"] = "news:comp.infosystems.www.servers.unix",
+	["urn:oasis:names:specification:docbook:dtd:xml:4.1.2"] = "urn:oasis:names:specification:docbook:dtd:xml:4.1.2",
+	["http://www.w3.org/2000/01/rdf-schema#"] = "http://www.w3.org/2000/01/rdf-schema#",
+	["http://127.0.0.1/"] = "http://127.0.0.1/",
+	["http://127.0.0.1:80/"] = "http://127.0.0.1/",
+	["http://example.com:081/"] = "http://example.com:81/",
+	["http://example.com/?q=foo"] = "http://example.com/?q=foo",
+	["http://example.com?q=foo"] = "http://example.com/?q=foo",
 }
 
 for k,v in pairs(test2) do
@@ -172,4 +183,3 @@ for k,v in pairs(test2) do
   is(tostring(u), v, "Test normalize '".. k.."' => '"..v..' => '..tostring(u))
 end
 
-]]

@@ -93,13 +93,13 @@ function build(self)
       authority = authority .. ':' .. self.port
     end
     local userinfo
-    if self.user then
+    if self.user and self.user ~= "" then
       userinfo = self.user
       if self.password then
         userinfo = userinfo .. ':' .. self.password
       end
     end
-    if userinfo then
+    if userinfo and userinfo ~= "" then
       authority = userinfo .. '@' .. authority
     end
     if authority then
@@ -264,12 +264,12 @@ function parse(url)
     comp.scheme = v:lower()
     return ''
   end)
-  url = url:gsub('^//([^/]*)', function(v)
-    setAuthority(comp, v)
-    return ''
-  end)
   url = url:gsub('%?(.*)', function(v)
     setQuery(comp, v)
+    return ''
+  end)
+  url = url:gsub('^//([^/]*)', function(v)
+    setAuthority(comp, v)
     return ''
   end)
   comp.path = decode(url)
@@ -336,9 +336,6 @@ local function absolutePath(base_path, relative_path)
     path = '/'..path:gsub("[^/]*$", "")
   end
   path = path .. relative_path
-  --path:gsub("/%.%.$", "/../")
-  --path:gsub("/%.$", "/./")
-  path:gsub("%.$", "./")
   path = path:gsub("([^/]*%./)", function (s)
     if s ~= "./" then return s else return "" end
   end)
@@ -350,12 +347,15 @@ local function absolutePath(base_path, relative_path)
       if s ~= "../../" then return "" else return s end
     end)
   end
-  path = string.gsub(reduced, "([^/]*/%.%.)$", function (s)
+  path = string.gsub(path, "([^/]*/%.%.?)$", function (s)
     if s ~= "../.." then return "" else return s end
   end)
-  path = '/' .. string.gsub(path, '^/+%.%.?/?', '')
-
-  return path
+  local reduced
+  while reduced ~= path do
+    reduced = path
+    path = string.gsub(reduced, '^/?%.%./', '')
+  end
+  return '/' .. path
 end
 
 function resolve(self, other)
@@ -393,8 +393,7 @@ function normalize(self)
     local path = self.path
     path = absolutePath(path, "")
     -- normalize multiple slashes
-    path = string.gsub(path, "//+", "/")
-    -- 
+    path = string.gsub(path, "//+", "/") 
     self.path = path
   end
   return self
