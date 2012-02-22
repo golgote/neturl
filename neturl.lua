@@ -1,12 +1,13 @@
 
-module('neturl', package.seeall)
+local M = {}
+M.version = "0.9.0"
 
-options = {
+M.options = {
   separator = '&'
 }
 
 -- @see http://www.iana.org/assignments/uri-schemes.html
-local services = {
+M.services = {
   ['acap']     = 674,
   ['cap']      = 1026,
   ['dict']     = 2628,
@@ -74,7 +75,7 @@ local function encodeSegment(s)
   return s:gsub('([^a-zA-Z0-9])', legalEncode)
 end
 
-function build(self)
+function M:build()
   local url = ''
   if self.path then
     local path = self.path
@@ -89,7 +90,7 @@ function build(self)
   end
   if self.host then
     local authority = self.host
-    if self.port and self.scheme and services[self.scheme] ~= self.port then
+    if self.port and self.scheme and M.services[self.scheme] ~= self.port then
       authority = authority .. ':' .. self.port
     end
     local userinfo
@@ -119,10 +120,10 @@ function build(self)
   return url
 end
 
-function buildQuery(tab, sep, key)
+function M.buildQuery(tab, sep, key)
   local query = {}
   if not sep then
-    sep = options.separator or '&'
+    sep = M.options.separator or '&'
   end
   local keys = {}
   for k in pairs(tab) do
@@ -136,7 +137,7 @@ function buildQuery(tab, sep, key)
       name = string.format('%s[%s]', tostring(key), tostring(name))
     end
     if type(value) == 'table' then
-      query[#query+1] = buildQuery(value, sep, name)
+      query[#query+1] = M.buildQuery(value, sep, name)
     else
       local value = encodeValue(tostring(value))
       if value ~= "" then
@@ -152,9 +153,10 @@ end
 -- Historically, PHP had to replace brackets because of the infamous 
 -- register_globals parameter. We don't have this problem here, so
 -- we keep unbalanced brackets in key names.
-function parseQuery(str, sep)
+-- @todo limit the max number of parameters with M.options.max_parameters
+function M.parseQuery(str, sep)
   if not sep then
-    sep = options.separator or '&'
+    sep = M.options.separator or '&'
   end
 
   local values = {}
@@ -201,20 +203,20 @@ function parseQuery(str, sep)
       t = t[k]
     end
   end
-  setmetatable(values, { __tostring = _M.buildQuery })
+  setmetatable(values, { __tostring = M.buildQuery })
   return values
 end
 
-function setQuery(self, query)
+function M:setQuery(query)
   local query = query
   if type(query) == 'table' then
-    query = buildQuery(query)
+    query = M.buildQuery(query)
   end
-  self.query = parseQuery(query)
+  self.query = M.parseQuery(query)
   return query
 end
 
-function setAuthority(self, authority)
+function M:setAuthority(authority)
   self.authority = authority
   self.port = nil
   self.host = nil
@@ -226,11 +228,16 @@ function setAuthority(self, authority)
     self.userinfo = v
     return ''
   end)
-  authority = authority:gsub(':([^:]*)$', function(v)
-      self.port = tonumber(v)
-      return ''
+  authority = authority:gsub("^%[[^%]]+%]", function(v)
+    -- ipv6
+    self.host = v
+    return ''
   end)
-  if authority ~= '' then
+  authority = authority:gsub(':([^:]*)$', function(v)
+    self.port = tonumber(v)
+    return ''
+  end)
+  if authority ~= '' and not self.host then
     self.host = authority:lower()
   end
   if self.userinfo then
@@ -250,10 +257,10 @@ end
 -- query, fragment
 -- @param url Url string
 -- @return A table with the different parts and a few other functions
-function parse(url)
+function M.parse(url)
   local comp = {}
-  setAuthority(comp, "")
-  setQuery(comp, "")
+  M.setAuthority(comp, "")
+  M.setQuery(comp, "")
 
   local url = tostring(url or '')
   url = url:gsub('#(.*)$', function(v)
@@ -265,25 +272,25 @@ function parse(url)
     return ''
   end)
   url = url:gsub('%?(.*)', function(v)
-    setQuery(comp, v)
+    M.setQuery(comp, v)
     return ''
   end)
   url = url:gsub('^//([^/]*)', function(v)
-    setAuthority(comp, v)
+    M.setAuthority(comp, v)
     return ''
   end)
   comp.path = decode(url)
 
   setmetatable(comp, {
-    __index = _M,
-    __tostring =_M.build}
+    __index = M,
+    __tostring = M.build}
   )
   return comp
 end
 
 -- @see http://en.wikipedia.org/wiki/URL_normalization
 -- This function will also remove multiple slashes
-function removeDotSegments(path)
+function M.removeDotSegments(path)
   local fields = {}
   if string.len(path) == 0 then
     return ""
@@ -358,12 +365,12 @@ local function absolutePath(base_path, relative_path)
   return '/' .. path
 end
 
-function resolve(self, other)
+function M:resolve(other)
   if type(self) == "string" then
-    self = parse(self)
+    self = M.parse(self)
   end
   if type(other) == "string" then
-    other = parse(other)
+    other = M.parse(other)
   end
   if other.scheme then 
     return other
@@ -385,9 +392,9 @@ function resolve(self, other)
   end
 end
 
-function normalize(self)
+function M:normalize()
   if type(self) == 'string' then
-    self = parse(self)
+    self = M.parse(self)
   end
   if self.path then
     local path = self.path
@@ -398,3 +405,5 @@ function normalize(self)
   end
   return self
 end
+
+return M

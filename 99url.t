@@ -1,14 +1,17 @@
 #!/usr/bin/env lua
 require 'Test.More'
 
-local url = require'neturl'
 d = require'dumper'
 dump = function(str, var) print(d.dump(str, var)) end
+
+local url = require'neturl'
 
 local s
 local q
 
 plan(14)
+
+--[=[
 
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
@@ -91,52 +94,50 @@ local test1 = {
 }
 
 for k,v in pairs(test1) do
-  local u = url.parse('http://a/b/c/d;p?q')
-  local res = u:resolve(k)
-  is(tostring(res), v, "Test resolve '".. k.."' => '"..v..' => '..tostring(res))
+	local u = url.parse('http://a/b/c/d;p?q')
+	local res = u:resolve(k)
+	is(tostring(res), v, "Test resolve '".. k.."' => '"..v..' => '..tostring(res))
 end
 
 local test2 = {
 	["/foo/bar/."] = "/foo/bar/",
-["/foo/bar/./"] = "/foo/bar/",
-["/foo/bar/.."] = "/foo/",
-["/foo/bar/../"] = "/foo/",
-["/foo/bar/../baz"] = "/foo/baz",
-["/foo/bar/../.."] = "/",
-["/foo/bar/../../"] = "/",
-["/foo/bar/../../baz"] = "/baz",
-["/./foo"] = "/foo",
-["/foo."] = "/foo.",
-["/.foo"] = "/.foo",
-["/foo.."] = "/foo..",
-["/..foo"] = "/..foo",
-["/./foo/."] = "/foo/",
-["/foo/./bar"] = "/foo/bar",
-["/foo/../bar"] = "/bar",
-["/foo//"] = "/foo/",
-["/foo///bar//"] = "/foo/bar/",
-["http://www.foo.com:80/foo"] = "http://www.foo.com/foo",
-["http://www.foo.com/foo/../foo"] = "http://www.foo.com/foo",
-["http://www.foo.com:8000/foo"] = "http://www.foo.com:8000/foo",
-["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
-["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
- -- not sure which result I should get here
- --["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529&",
- --["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529&#038;cpage=1#comment-783",
-["/foo/bar/../../../baz"] = "/baz",
-["/foo/bar/../../../../baz"] = "/baz",
-["/./../foo"] = "/foo",
-["/../foo"] = "/foo",
+	["/foo/bar/./"] = "/foo/bar/",
+	["/foo/bar/.."] = "/foo/",
+	["/foo/bar/../"] = "/foo/",
+	["/foo/bar/../baz"] = "/foo/baz",
+	["/foo/bar/../.."] = "/",
+	["/foo/bar/../../"] = "/",
+	["/foo/bar/../../baz"] = "/baz",
+	["/./foo"] = "/foo",
+	["/foo."] = "/foo.",
+	["/.foo"] = "/.foo",
+	["/foo.."] = "/foo..",
+	["/..foo"] = "/..foo",
+	["/./foo/."] = "/foo/",
+	["/foo/./bar"] = "/foo/bar",
+	["/foo/../bar"] = "/bar",
+	["/foo//"] = "/foo/",
+	["/foo///bar//"] = "/foo/bar/",
+	["http://www.foo.com:80/foo"] = "http://www.foo.com/foo",
+	["http://www.foo.com/foo/../foo"] = "http://www.foo.com/foo",
+	["http://www.foo.com:8000/foo"] = "http://www.foo.com:8000/foo",
+	["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
+	["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
+	["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529#038;cpage=1#comment-783",
+	["/foo/bar/../../../baz"] = "/baz",
+	["/foo/bar/../../../../baz"] = "/baz",
+	["/./../foo"] = "/foo",
+	["/../foo"] = "/foo",
 }
 
 for k,v in pairs(test2) do
-  local u = url.parse(k):normalize()
-  is(tostring(u), v, "Test normalize '".. k .."' => '".. v .."' => '"..tostring(u).."'")
+	local u = url.parse(k):normalize()
+	is(tostring(u), v, "Test normalize '".. k .."' => '".. v .."' => '"..tostring(u).."'")
 end
 
 
 
-
+]=]
 
 
 
@@ -155,8 +156,6 @@ local test2 = {
 	["http://example.com/?q=%E2%85%A0"] = "http://example.com/?q=%E2%85%A0",
 	["http://example.com/?q=%5c"] = "http://example.com/?q=%5C",
 	["http://example.com/?q=%5C"] = "http://example.com/?q=%5C",
-	["http://example.com/a/../a/b"] = "http://example.com/a/b",
-	["http://example.com/a/./b"] = "http://example.com/a/b",
 	["http://example.com:80/"] = "http://example.com/",
 	["http://example.com/"] = "http://example.com/",
 	["http://example.com/~jane"] = "http://example.com/~jane",
@@ -166,7 +165,8 @@ local test2 = {
 	["http://www.ietf.org/rfc/rfc2396.txt"] = "http://www.ietf.org/rfc/rfc2396.txt",
 	["telnet://192.0.2.16:80/"] = "telnet://192.0.2.16:80/",
 	["ftp://ftp.is.co.za/rfc/rfc1808.txt"] = "ftp://ftp.is.co.za/rfc/rfc1808.txt",
-	["ldap://[2001:db8::7]/c=GB?objectClass?one"] = "ldap://[2001:db8::7]/c=GB?objectClass?one",
+	["http://[2001:db8::7]/?a=b"] = "http://[2001:db8::7]/?a=b",
+	["http://[2001:db8::1:0:0:1]:8080/test?a=b"] = "http://[2001:db8::1:0:0:1]:8080/test?a=b",
 	["mailto:John.Doe@example.com"] = "mailto:John.Doe@example.com",
 	["news:comp.infosystems.www.servers.unix"] = "news:comp.infosystems.www.servers.unix",
 	["urn:oasis:names:specification:docbook:dtd:xml:4.1.2"] = "urn:oasis:names:specification:docbook:dtd:xml:4.1.2",
@@ -176,10 +176,12 @@ local test2 = {
 	["http://example.com:081/"] = "http://example.com:81/",
 	["http://example.com/?q=foo"] = "http://example.com/?q=foo",
 	["http://example.com?q=foo"] = "http://example.com/?q=foo",
+	["http://example.com/a/../a/b"] = "http://example.com/a/../a/b",
+	["http://example.com/a/./b"] = "http://example.com/a/./b",
 }
 
 for k,v in pairs(test2) do
-  local u = url.parse(k)
-  is(tostring(u), v, "Test normalize '".. k.."' => '"..v..' => '..tostring(u))
+	local u = url.parse(k)
+	is(tostring(u), v, "Test rebuild and clean '".. k.."' => '"..v..' => '..tostring(u))
 end
 
