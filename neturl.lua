@@ -431,7 +431,7 @@ function M:normalize()
   end
   if self.path then
     local path = self.path
-    path = M.absolutePath(path, "")
+    path = absolutePath(path, "")
     -- normalize multiple slashes
     path = string.gsub(path, "//+", "/") 
     self.path = path
