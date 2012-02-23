@@ -1,11 +1,19 @@
+-----------------
+-- neturl.lua - a robust url parser and builder
+--
+-- Bertrand Mansion, 2011-2012; License MIT
+-- @module neturl
 
 local M = {}
 M.version = "0.9.0"
 
+--- url options
+-- separator is set to & by default but could be anything like &amp; or ;
 M.options = {
   separator = '&'
 }
 
+--- list of known and common scheme ports
 -- @see http://www.iana.org/assignments/uri-schemes.html
 M.services = {
   ['acap']     = 674,
@@ -75,6 +83,8 @@ local function encodeSegment(s)
   return s:gsub('([^a-zA-Z0-9])', legalEncode)
 end
 
+--- builds the url
+-- @return a string representing the built url
 function M:build()
   local url = ''
   if self.path then
@@ -120,6 +130,11 @@ function M:build()
   return url
 end
 
+--- builds the querystring
+-- @param tab The key/value parameters
+-- @param sep The separator to use (optional)
+-- @param key The parent key if the value is multi-dimensional (optional)
+-- @return a string representing the built querystring
 function M.buildQuery(tab, sep, key)
   local query = {}
   if not sep then
@@ -150,10 +165,13 @@ function M.buildQuery(tab, sep, key)
   return table.concat(query, sep)
 end
 
--- Historically, PHP had to replace brackets because of the infamous 
--- register_globals parameter. We don't have this problem here, so
--- we keep unbalanced brackets in key names.
+--- Parses the querystring to a table
+-- This function can parse multidimensional pairs and is mostly compatible
+-- with PHP usage of brackets in key names like ?param[key]=value
+-- @param str The qureystring to parse
+-- @param sep The separator between key/value pairs
 -- @todo limit the max number of parameters with M.options.max_parameters
+-- @return a table representing the query key/value pairs
 function M.parseQuery(str, sep)
   if not sep then
     sep = M.options.separator or '&'
@@ -207,6 +225,9 @@ function M.parseQuery(str, sep)
   return values
 end
 
+--- set the url query
+-- @param query Can be a string to parse or a table of key/value pairs
+-- @return a table representing the query key/value pairs
 function M:setQuery(query)
   local query = query
   if type(query) == 'table' then
@@ -216,6 +237,10 @@ function M:setQuery(query)
   return query
 end
 
+--- set the authority part of the url
+-- The authority is parsed to find the user, password, port and host if available.
+-- @param authority The string representing the authority
+-- @return a string with what remains after the authority was parsed
 function M:setAuthority(authority)
   self.authority = authority
   self.port = nil
@@ -256,7 +281,7 @@ end
 -- scheme, userinfo, user, password, authority, host, port, path, 
 -- query, fragment
 -- @param url Url string
--- @return A table with the different parts and a few other functions
+-- @return a table with the different parts and a few other functions
 function M.parse(url)
   local comp = {}
   M.setAuthority(comp, "")
@@ -288,8 +313,11 @@ function M.parse(url)
   return comp
 end
 
--- @see http://en.wikipedia.org/wiki/URL_normalization
+--- removes dots and slashes in urls when possible
 -- This function will also remove multiple slashes
+-- @param path The string representing the path to clean
+-- @return a string of the path without unnecessary dots and segments
+-- @see http://en.wikipedia.org/wiki/URL_normalization
 function M.removeDotSegments(path)
   local fields = {}
   if string.len(path) == 0 then
@@ -365,6 +393,9 @@ local function absolutePath(base_path, relative_path)
   return '/' .. path
 end
 
+--- builds a new url by using the one given as parameter and resolving paths
+-- @param other A string or a table representing a url
+-- @return a new url table
 function M:resolve(other)
   if type(self) == "string" then
     self = M.parse(self)
@@ -392,13 +423,15 @@ function M:resolve(other)
   end
 end
 
+--- normalize a url path following some common normalization rules
+-- @return the normalized path
 function M:normalize()
   if type(self) == 'string' then
     self = M.parse(self)
   end
   if self.path then
     local path = self.path
-    path = absolutePath(path, "")
+    path = M.absolutePath(path, "")
     -- normalize multiple slashes
     path = string.gsub(path, "//+", "/") 
     self.path = path
