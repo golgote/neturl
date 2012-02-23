@@ -11,8 +11,6 @@ local q
 
 plan(14)
 
---[=[
-
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
 is("http://www.example.com/?net=url", tostring(u), "Test new query variable")
@@ -134,15 +132,6 @@ for k,v in pairs(test2) do
 	local u = url.parse(k):normalize()
 	is(tostring(u), v, "Test normalize '".. k .."' => '".. v .."' => '"..tostring(u).."'")
 end
-
-
-
-]=]
-
-
-
-
-
 
 
 local test2 = {
