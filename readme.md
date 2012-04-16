@@ -6,7 +6,7 @@ This small Lua library provides a few functions to parse URL with querystring an
 
 ### Querystring parser
 
-The library supports brackets in querystrings, like PHP, that means you can use brackets to build multi-dimensional tables. The parsed querystring has a tostring() helper.
+The library supports brackets in querystrings, like PHP. It means you can use brackets to build multi-dimensional tables. The parsed querystring has a tostring() helper. As usual with Lua, if no index is specified, it starts from index 1.
 
     > query = url.parseQuery("first=abc&a[]=123&a[]=false&b[]=str&c[]=3.5&a[]=last")
     > = query
@@ -32,6 +32,8 @@ The library converts an URL to a table of the elements as described in RFC : sch
     http://www.foo.com/foo/bar
 
 ### URL resolver
+
+URL resolution follows the examples provided in the [RFC 2396](http://tools.ietf.org/html/rfc2396#appendix-C).
 
     > = url.parse("http://a/b/c/d;p?q"):resolve("../../g")
     http://a/g
