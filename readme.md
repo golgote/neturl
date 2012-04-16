@@ -11,7 +11,7 @@ The library supports brackets in querystrings, like PHP. It means you can use br
     > query = url.parseQuery("first=abc&a[]=123&a[]=false&b[]=str&c[]=3.5&a[]=last")
     > = query
     a[1]=123&a[2]=false&a[3]=last&b[1]=str&c[1]=3.5&first=abc
-    > = q.a[1]
+    > = query.a[1]
     123
 
 ### URL parser
