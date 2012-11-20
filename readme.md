@@ -1,4 +1,4 @@
-## A Robust URL Parser and Builder
+## A Robust URL Parser and Builder for Lua
 
 This small Lua library provides a few functions to parse URL with querystring and build new URL easily.
 
