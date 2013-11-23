@@ -50,6 +50,10 @@ URL resolution follows the examples provided in the [RFC 2396](http://tools.ietf
 - Luasocket/url.lua can't parse http://www.example.com?url=net correctly because there are no path.
 - Luasocket/url.lua can't clean and normalize url, for example by removing default port, extra zero in port, empty authority, uppercase scheme, domain name.
 - Luasocket/url.lua doesn't parse the query string parameters.
-- Luasocket/url.lua will resolve http://a/b/c/d;p?q + ../../../g to http://ag instead of http://a/g,
-../../../../g to http://a../g, g;x=1/../y to http://a/b/c/g;x=1/../y instead of http://a/b/c/y, /./g to http://a/./g instead of http://a/g, g;x=1/./y to http://a/b/c/g;x=1/./y instead of http://a/b/c/g;x=1/y, which makes it less compliant with RFC 2396.
+- Luasocket/url.lua is less compliant with RFC 2396 and will resolve `http://a/b/c/d;p?q` and :
+    `../../../g` to `http://ag` instead of `http://a/g`
+    `../../../../g` to `http://a../g` instead of `http://a/g`
+    `g;x=1/../y` to `http://a/b/c/g;x=1/../y` instead of `http://a/b/c/y`
+    `/./g` to `http://a/./g` instead of `http://a/g`
+    `g;x=1/./y` to `http://a/b/c/g;x=1/./y` instead of `http://a/b/c/g;x=1/y`
 

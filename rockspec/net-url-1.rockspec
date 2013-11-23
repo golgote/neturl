@@ -2,8 +2,8 @@ package = "net-url"
 version = "0.9"
 
 source = {
-   url = "http://cloud.github.com/downloads/",
-   md5 = ""
+   url = "git://github.com/golgote/neturl.git",
+   tag = "0.9"
 }
 
 description = {
@@ -20,10 +20,8 @@ dependencies = {
 }
 
 build = {
-   type = "none",
-   install = {
-      lua = {
-         ["net.url"] = "lib/net/url.lua"
-      }
+   type = "builtin",
+   modules = {
+       ["net.url"] = "lib/net/url.lua"
    }
 }
