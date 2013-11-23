@@ -1,7 +1,6 @@
------------------
 -- neturl.lua - a robust url parser and builder
 --
--- Bertrand Mansion, 2011-2012; License MIT
+-- Bertrand Mansion, 2011-2013; License MIT
 -- @module neturl
 -- @alias	M
 
@@ -280,7 +279,7 @@ end
 
 --- Parse the url into the designated parts.
 -- Depending on the url, the following parts can be available:
--- scheme, userinfo, user, password, authority, host, port, path, 
+-- scheme, userinfo, user, password, authority, host, port, path,
 -- query, fragment
 -- @param url Url string
 -- @return a table with the different parts and a few other functions
@@ -334,10 +333,10 @@ function M.removeDotSegments(path)
 	end
 
 	path:gsub('[^/]+', function(c) table.insert(fields, c) end)
-	
+
 	local new = {}
 	local j = 0
-	
+
 	for i,c in ipairs(fields) do
 		if c == '..' then
 			if j > 0 then
@@ -364,7 +363,7 @@ function M.removeDotSegments(path)
 end
 
 local function absolutePath(base_path, relative_path)
-	if string.sub(relative_path, 1, 1) == "/" then 
+	if string.sub(relative_path, 1, 1) == "/" then
 		return '/' .. string.gsub(relative_path, '^[%./]+', '')
 	end
 	local path = base_path
@@ -404,7 +403,7 @@ function M:resolve(other)
 	if type(other) == "string" then
 		other = M.parse(other)
 	end
-	if other.scheme then 
+	if other.scheme then
 		return other
 	else
 		other.scheme = self.scheme
@@ -425,7 +424,7 @@ function M:resolve(other)
 end
 
 --- normalize a url path following some common normalization rules
--- described on <a href="http://en.wikipedia.org/wiki/URL_normalization">The URL normalization page of Wikipedia</a> 
+-- described on <a href="http://en.wikipedia.org/wiki/URL_normalization">The URL normalization page of Wikipedia</a>
 -- @return the normalized path
 function M:normalize()
 	if type(self) == 'string' then
@@ -435,7 +434,7 @@ function M:normalize()
 		local path = self.path
 		path = absolutePath(path, "")
 		-- normalize multiple slashes
-		path = string.gsub(path, "//+", "/") 
+		path = string.gsub(path, "//+", "/")
 		self.path = path
 	end
 	return self

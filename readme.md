@@ -2,7 +2,7 @@
 
 This small Lua library provides a few functions to parse URL with querystring and build new URL easily.
 
-    > url = require'neturl'
+    > url = require "net.url"
 
 ### Querystring parser
 
@@ -44,4 +44,12 @@ URL resolution follows the examples provided in the [RFC 2396](http://tools.ietf
     > u.query.foo = "bar"
     > = u
     http://www.example.com/?foo=bar
+
+### Differences with luasocket/url.lua
+
+- Luasocket/url.lua can't parse http://www.example.com?url=net correctly because there are no path.
+- Luasocket/url.lua can't clean and normalize url, for example by removing default port, extra zero in port, empty authority, uppercase scheme, domain name.
+- Luasocket/url.lua doesn't parse the query string parameters.
+- Luasocket/url.lua will resolve http://a/b/c/d;p?q + ../../../g to http://ag instead of http://a/g,
+../../../../g to http://a../g, g;x=1/../y to http://a/b/c/g;x=1/../y instead of http://a/b/c/y, /./g to http://a/./g instead of http://a/g, g;x=1/./y to http://a/b/c/g;x=1/./y instead of http://a/b/c/g;x=1/y, which makes it less compliant with RFC 2396.
 
