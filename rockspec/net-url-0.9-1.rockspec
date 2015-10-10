@@ -1,9 +1,9 @@
 package = "net-url"
-version = "0.9"
+version = "0.9-1"
 
 source = {
    url = "git://github.com/golgote/neturl.git",
-   tag = "0.9"
+   tag = "0.9-1"
 }
 
 description = {
