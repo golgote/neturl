@@ -277,6 +277,94 @@ function M:setAuthority(authority)
 	return authority
 end
 
+local split = (function(iterator)
+    return function (s, delim) 
+        return iterator(delim),s,1
+    end
+end)(function(delim)
+    -- is it bad to generate a new iterator for every delimiter used?
+    -- XXX: will this generate a new iterator for every delimiter used
+    -- or will it generate a new iterator every time even for the same delimiter?
+    if #delim ==  0 then
+        -- do something useful instead of just looping infinitely
+        return function(s,start)
+            if start > #s then
+                return nil
+            end
+            return start+1,s:sub(start,start)
+        end
+    end
+    return function(s,start)
+        local tail = s:find(delim,start,true)
+        if start == -1 then
+            return nil
+        elseif tail then
+            local item = s:sub(start,tail-1)
+            return tail+1, item
+        else
+            return -1, s:sub(start)
+        end
+    end
+end);
+
+local function listify(f,s,var)
+    local t = {}
+    for index,item in f, s, var do
+        t[#t+1] = item
+    end
+    return t
+end
+
+local function testsplit()
+    local assert = require('luassert')
+    assert.same({''},listify(split('',',')))
+    assert.same({''},listify(split('',',')))
+    assert.same({'a','bb','c'},listify(split("a,bb,c",',')))
+    assert.same({'aaaa','bb','c'},listify(split("aaaa,bb,c",',')))
+    assert.same({'aaaa'},listify(split("aaaa",',')))
+    assert.same({'','','','',''},listify(split("aaaa",'a')))
+    assert.same({'a','b','c','d'},listify(split('abcd','')))
+    assert.has.errors(function() return split('abcd',nil) end)
+end
+-- should register this with a testing framework, only call it when testing == true or something
+testsplit()
+
+function M.parsePath(path)
+    local components = {}
+    for _,component in split(path,'/') do
+        local parameters = nil
+        local hasParameters = false
+        for _,piece in split(component,';') do
+            if parameters == nil then
+                -- first piece is special, the name
+                parameters = {decode(piece)}
+            else
+                hasParameters = true
+                local equals = piece:find('=',1,true)
+                if equals then
+                    local name = decode(piece:sub(1,equals-1))
+                    local value = {}
+                    for _,v in split(piece:sub(equals+1),',') do
+                        value[#value+1] = decode(v)
+                    end
+                    if value[2] == nil then
+                        value = value[1] -- eh, this isn't regular but usually only one value at most
+                    end
+                    parameters[name] = value
+                else
+                    parameters[decode(piece)] = true
+                end
+            end
+        end
+        if not hasParameters then
+            parameters = parameters[1]
+        end
+        components[#components+1] = parameters
+    end
+
+    return components
+end
+
 --- Parse the url into the designated parts.
 -- Depending on the url, the following parts can be available:
 -- scheme, userinfo, user, password, authority, host, port, path,
@@ -305,6 +393,11 @@ function M.parse(url)
 		M.setAuthority(comp, v)
 		return ''
 	end)
+
+    comp.components = M.parsePath(url)
+    
+    -- XXX: this makes determining path components impossible, since %2f is decoded to /
+    -- but isn't separating two path components.
 	comp.path = decode(url)
 
 	setmetatable(comp, {
@@ -313,6 +406,16 @@ function M.parse(url)
 	)
 	return comp
 end
+
+local function testParsePath()
+    local assert = require('luassert')
+    assert.same({'a','b','c'}, M.parsePath('a/b/c'))
+    assert.same({'a','b/','c'}, M.parsePath('a/b%2f/c'))
+    assert.same({{'a',name='value'},'b/','c'}, M.parsePath('a;name=value/b%2f/c'))
+    assert.same({{'a',name={'1','2','3'}},',b/','c;=,'}, M.parsePath('a;name=1,2,3/%2Cb%2f/c%3B%3d%2c'))
+end
+-- should register this with a testing framework, only call it when testing == true or something
+testParsePath()
 
 --- removes dots and slashes in urls when possible
 -- This function will also remove multiple slashes
