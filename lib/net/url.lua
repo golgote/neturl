@@ -84,6 +84,10 @@ local function encodeSegment(s)
 	return s:gsub('([^a-zA-Z0-9])', legalEncode)
 end
 
+local function concat(s, u)
+	return s .. u:build()
+end
+
 --- builds the url
 -- @return a string representing the built url
 function M:build()
@@ -309,6 +313,7 @@ function M.parse(url)
 
 	setmetatable(comp, {
 		__index = M,
+		__concat = concat,
 		__tostring = M.build}
 	)
 	return comp
