@@ -14,6 +14,8 @@ M.options = {
 	separator = '&'
 }
 
+M.allow_args_names_repetition = true
+
 --- list of known and common scheme ports
 -- as documented in <a href="http://www.iana.org/assignments/uri-schemes.html">IANA URI scheme list</a>
 M.services = {
@@ -198,11 +200,15 @@ function M.parseQuery(str, sep)
 
 		if not values[key] then
 			values[key] = {}
-		end
+    end
+
 		if #keys > 0 and type(values[key]) ~= 'table' then
 			values[key] = {}
 		elseif #keys == 0 and type(values[key]) == 'table' then
 			values[key] = decode(val)
+    elseif M.allow_args_names_repetition
+        and type(values[key]) == 'string' then
+      values[key] = values[key] .. '|' .. val
 		end
 
 		local t = values[key]
