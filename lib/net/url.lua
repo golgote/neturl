@@ -157,12 +157,23 @@ function M.buildQuery(tab, sep, key)
 		if type(value) == 'table' then
 			query[#query+1] = M.buildQuery(value, sep, name)
 		else
-			local value = encodeValue(tostring(value))
-			if value ~= "" then
-				query[#query+1] = string.format('%s=%s', name, value)
-			else
-				query[#query+1] = name
-			end
+      local values, sep = {}, '|'
+      if M.allow_args_names_repetition then
+        for v in string.gmatch(value, "([^"..sep.."]+)") do
+          table.insert(values, v)
+        end
+      else
+        values = {value}
+      end
+
+      for _, value in pairs(values) do
+        local value = encodeValue(tostring(value))
+        if value ~= "" then
+          query[#query+1] = string.format('%s=%s', name, value)
+        else
+          query[#query+1] = name
+        end
+      end
 		end
 	end
 	return table.concat(query, sep)

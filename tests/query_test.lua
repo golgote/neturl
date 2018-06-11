@@ -11,7 +11,7 @@ dump = function(str, var) print(d.dump(str, var)) end
 local s
 local q
 
-plan(20)
+plan(22)
 
 s = "first=abc&a[]=123&a[]=false&b[]=str&c[]=3.5&a[]=last"
 q = url.parseQuery(s)
@@ -182,6 +182,9 @@ is_deeply({
   arg1 = 'z|t',
   arg2 = 'p',
 }, q, "Test string with allowed arguments names repetition")
+is('arg1=z&arg1=t&arg2=p',
+    url.buildQuery(q), 'Test build back with allowed arguments names repetition'
+)
 
 url.allow_args_names_repetition = false
 s = "arg1=z&arg1=t&arg2=p"
