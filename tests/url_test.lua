@@ -122,6 +122,7 @@ local test2 = {
 	["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529#038;cpage=1#comment-783",
+	["http://www.foo.com/some +path/?args=foo%2Bbar"] = "http://www.foo.com/some +path/?args=foo+bar",
 	["/foo/bar/../../../baz"] = "/baz",
 	["/foo/bar/../../../../baz"] = "/baz",
 	["/./../foo"] = "/foo",
