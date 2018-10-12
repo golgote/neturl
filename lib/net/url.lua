@@ -14,6 +14,8 @@ M.options = {
 	separator = '&'
 }
 
+M.allow_args_names_repetition = true
+
 --- list of known and common scheme ports
 -- as documented in <a href="http://www.iana.org/assignments/uri-schemes.html">IANA URI scheme list</a>
 M.services = {
@@ -162,12 +164,23 @@ function M.buildQuery(tab, sep, key)
 		if type(value) == 'table' then
 			query[#query+1] = M.buildQuery(value, sep, name)
 		else
-			local value = encodeValue(tostring(value))
-			if value ~= "" then
-				query[#query+1] = string.format('%s=%s', name, value)
-			else
-				query[#query+1] = name
-			end
+      local values, sep = {}, '|'
+      if M.allow_args_names_repetition then
+        for v in string.gmatch(value, "([^"..sep.."]+)") do
+          table.insert(values, v)
+        end
+      else
+        values = {value}
+      end
+
+      for _, value in pairs(values) do
+        local value = encodeValue(tostring(value))
+        if value ~= "" then
+          query[#query+1] = string.format('%s=%s', name, value)
+        else
+          query[#query+1] = name
+        end
+      end
 		end
 	end
 	return table.concat(query, sep)
@@ -205,11 +218,15 @@ function M.parseQuery(str, sep)
 
 		if not values[key] then
 			values[key] = {}
-		end
+    end
+
 		if #keys > 0 and type(values[key]) ~= 'table' then
 			values[key] = {}
 		elseif #keys == 0 and type(values[key]) == 'table' then
 			values[key] = decode(val)
+    elseif M.allow_args_names_repetition
+        and type(values[key]) == 'string' then
+      values[key] = values[key] .. '|' .. val
 		end
 
 		local t = values[key]
