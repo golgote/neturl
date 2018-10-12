@@ -44,6 +44,9 @@ URL resolution follows the examples provided in the [RFC 2396](http://tools.ietf
     > u.query.foo = "bar"
     > = u
     http://www.example.com/?foo=bar
+    
+    > u:setQuery{ json = true, skip = 100 }
+    http://www.example.com/?json=true&skip=100
 
 ### Differences with luasocket/url.lua
 
