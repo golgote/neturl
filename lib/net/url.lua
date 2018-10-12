@@ -55,8 +55,11 @@ local legal = {
 	[";"] = true -- can be used for parameters in path
 }
 
-local function decode(str)
-	local str = str:gsub('+', ' ')
+local function decode(str, path)
+	local str = str
+	if not path then
+		str = str:gsub('+', ' ')
+	end
 	return (str:gsub("%%(%x%x)", function(c)
 			return string.char(tonumber(c, 16))
 	end))
@@ -309,7 +312,7 @@ function M.parse(url)
 		M.setAuthority(comp, v)
 		return ''
 	end)
-	comp.path = decode(url)
+	comp.path = decode(url, true)
 
 	setmetatable(comp, {
 		__index = M,
