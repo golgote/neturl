@@ -1,17 +1,18 @@
--- neturl.lua - a robust url parser and builder
+-- net/url.lua - a robust url parser and builder
 --
--- Bertrand Mansion, 2011-2013; License MIT
--- @module neturl
+-- Bertrand Mansion, 2011-2021; License MIT
+-- @module net.url
 -- @alias	M
 
 local M = {}
-M.version = "0.9.0"
+M.version = "1.0.0"
 
 --- url options
 -- separator is set to `&` by default but could be anything like `&amp;amp;` or `;`
 -- @todo Add an option to limit the size of the argument table
 M.options = {
-	separator = '&'
+	separator = '&',
+	cumulative_parameters = false
 }
 
 --- list of known and common scheme ports
@@ -144,12 +145,19 @@ function M.buildQuery(tab, sep, key)
 	for k in pairs(tab) do
 		keys[#keys+1] = k
 	end
-	table.sort(keys)
+	table.sort(keys, function (a, b)
+  		local function padnum(n, rest) return ("%03d"..rest):format(tonumber(n)) end
+  		return tostring(a):gsub("(%d+)(%.)",padnum) < tostring(b):gsub("(%d+)(%.)",padnum)
+	end)
 	for _,name in ipairs(keys) do
 		local value = tab[name]
 		name = encode(tostring(name))
 		if key then
-			name = string.format('%s[%s]', tostring(key), tostring(name))
+			if M.options.cumulative_parameters and string.find(name, '^%d+$') then
+				name = tostring(key)
+			else
+				name = string.format('%s[%s]', tostring(key), tostring(name))
+			end
 		end
 		if type(value) == 'table' then
 			query[#query+1] = M.buildQuery(value, sep, name)
@@ -202,6 +210,10 @@ function M.parseQuery(str, sep)
 			values[key] = {}
 		elseif #keys == 0 and type(values[key]) == 'table' then
 			values[key] = decode(val)
+		elseif M.options.cumulative_parameters
+			and type(values[key]) == 'string' then
+			values[key] = { values[key] }
+			table.insert(values[key], decode(val))
 		end
 
 		local t = values[key]
