@@ -3,7 +3,7 @@ version = "1.0-1"
 
 source = {
    url = "git://github.com/golgote/neturl.git",
-   tag = "1.0-1"
+   tag = "v1.0-1"
 }
 
 description = {
