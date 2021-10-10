@@ -97,7 +97,7 @@ function M:build()
 	local url = ''
 	if self.path then
 		local path = self.path
-		path:gsub("([^/]+)", function (s) return encodeSegment(s) end)
+		path = path:gsub("([^/]+)", function (s) return encodeSegment(s) end)
 		url = url .. tostring(path)
 	end
 	if self.query then
