@@ -90,7 +90,6 @@ function M:build()
 	local url = ''
 	if self.path then
 		local path = self.path
-		path:gsub("([^/]+)", function (s) return encodeSegment(s) end)
 		url = url .. tostring(path)
 	end
 	if self.query then
@@ -155,7 +154,7 @@ function M.buildQuery(tab, sep, key)
 		if type(value) == 'table' then
 			query[#query+1] = M.buildQuery(value, sep, name)
 		else
-			local value = encodeValue(tostring(value))
+			local value = encodeValue(decode(tostring(value)))
 			if value ~= "" then
 				query[#query+1] = string.format('%s=%s', name, value)
 			else
@@ -305,7 +304,8 @@ function M.parse(url)
 		M.setAuthority(comp, v)
 		return ''
 	end)
-	comp.path = decode(url)
+
+	comp.path = url:gsub("([^/]+)", function (s) return encodeSegment(decode(s)) end)
 
 	setmetatable(comp, {
 		__index = M,
@@ -367,9 +367,9 @@ local function reducePath(base_path, relative_path)
 		return '/' .. string.gsub(relative_path, '^[%./]+', '')
 	end
 	local path = base_path
-	local isRelative = string.sub(path, 1, 1) ~= "/";
+	local startslash = string.sub(path, 1, 1) ~= "/";
 	if relative_path ~= "" then
-		path = (isRelative and '' or '/') .. path:gsub("[^/]*$", "")
+		path = (startslash and '' or '/') .. path:gsub("[^/]*$", "")
 	end
 	path = path .. relative_path
 	path = path:gsub("([^/]*%./)", function (s)
@@ -391,7 +391,7 @@ local function reducePath(base_path, relative_path)
 		reduced = path
 		path = string.gsub(reduced, '^/?%.%./', '')
 	end
-	return (isRelative and '' or '/') .. path
+	return (startslash and '' or '/') .. path
 end
 
 --- builds a new url by using the one given as parameter and resolving paths
