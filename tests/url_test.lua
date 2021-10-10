@@ -6,7 +6,7 @@ local url = require 'net.url'
 local s
 local q
 
-plan(124)
+plan(127)
 
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
@@ -48,7 +48,16 @@ is("gopher://example.com/#lua", tostring(u), "Test fragment")
 -- https://github.com/php/php-src/blob/5b01c4863fe9e4bc2702b2bbf66d292d23001a18/ext/standard/tests/url/urls.inc
 
 u = url.parse("https://example.com\\uFF03@bing.com")
-is(nil, u.userinfo, "Removes invalid userinfo")
+is(u.userinfo, nil, "Removes invalid userinfo")
+
+u = url.parse("http:// lua.org")
+is(u.host, nil, "Removes invalid hostname")
+
+u = url.parse("http://127.260.30.1:80/test")
+is(u.host, nil, "Removes invalid hostname")
+
+u = url.parse("http://[56FE::2159:5BBC::6594]:8080/test")
+is(u.host, nil, "Removes invalid hostname")
 
 local test1 = {
 	["g:h"] = "g:h",

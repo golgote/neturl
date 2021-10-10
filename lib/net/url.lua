@@ -253,18 +253,53 @@ function M:setAuthority(authority)
 		self.userinfo = v
 		return ''
 	end)
-	authority = authority:gsub("^%[[^%]]+%]", function(v)
-		-- ipv6
-		self.host = v
-		return ''
-	end)
-	authority = authority:gsub(':([^:]*)$', function(v)
+
+	authority = authority:gsub(':(%d+)$', function(v)
 		self.port = tonumber(v)
 		return ''
 	end)
-	if authority ~= '' and not self.host then
-		self.host = authority:lower()
+
+	local function getIP(str)
+		-- ipv4
+		local chunks = { str:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$") }
+		if #chunks == 4 then
+			for _, v in pairs(chunks) do
+				if tonumber(v) > 255 then
+					return false
+				end
+			end
+			return str
+		end
+		-- ipv6
+		local chunks = { str:match("^%["..(("([a-fA-F0-9]*):"):rep(8):gsub(":$","%%]$"))) }
+		if #chunks == 8 or #chunks < 8 and
+			str:match('::') and not str:gsub("::", "", 1):match('::') then
+			for _,v in pairs(chunks) do
+				if #v > 0 and tonumber(v, 16) > 65535 then
+					return false
+				end
+			end
+			return str
+		end
+		return nil
 	end
+
+	local ip = getIP(authority)
+	if ip then
+		self.host = ip
+	elseif type(ip) == 'nil' then
+		-- domain
+		if authority ~= '' and not self.host then
+			local host = authority:lower()
+			if  string.match(host, '^[%d%a%-%.]+$') ~= nil and
+				string.sub(host, 0, 1) ~= '.' and
+				string.sub(host, -1) ~= '.' and
+				string.find(host, '%.%.') == nil then
+				self.host = host
+			end
+		end
+	end
+
 	if self.userinfo then
 		local userinfo = self.userinfo
 		userinfo = userinfo:gsub(':([^:]*)$', function(v)
@@ -280,6 +315,7 @@ function M:setAuthority(authority)
 			self.password = nil
 		end
 	end
+
 	return authority
 end
 
