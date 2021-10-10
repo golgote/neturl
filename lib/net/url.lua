@@ -55,11 +55,8 @@ local legal = {
 	[";"] = true -- can be used for parameters in path
 }
 
-local function decode(str, path)
-	local str = str
-	if not path then
-		str = str:gsub('+', ' ')
-	end
+local function decode(str)
+	local str = str:gsub('+', ' ')
 	return (str:gsub("%%(%x%x)", function(c)
 			return string.char(tonumber(c, 16))
 	end))
@@ -85,10 +82,6 @@ local function encodeSegment(s)
 		return encode(c)
 	end
 	return s:gsub('([^a-zA-Z0-9])', legalEncode)
-end
-
-local function concat(s, u)
-	return s .. u:build()
 end
 
 --- builds the url
@@ -312,11 +305,10 @@ function M.parse(url)
 		M.setAuthority(comp, v)
 		return ''
 	end)
-	comp.path = decode(url, true)
+	comp.path = decode(url)
 
 	setmetatable(comp, {
 		__index = M,
-		__concat = concat,
 		__tostring = M.build}
 	)
 	return comp
@@ -370,13 +362,14 @@ function M.removeDotSegments(path)
 	return ret
 end
 
-local function absolutePath(base_path, relative_path)
+local function reducePath(base_path, relative_path)
 	if string.sub(relative_path, 1, 1) == "/" then
 		return '/' .. string.gsub(relative_path, '^[%./]+', '')
 	end
 	local path = base_path
+	local isRelative = string.sub(path, 1, 1) ~= "/";
 	if relative_path ~= "" then
-		path = '/'..path:gsub("[^/]*$", "")
+		path = (isRelative and '' or '/') .. path:gsub("[^/]*$", "")
 	end
 	path = path .. relative_path
 	path = path:gsub("([^/]*%./)", function (s)
@@ -398,7 +391,7 @@ local function absolutePath(base_path, relative_path)
 		reduced = path
 		path = string.gsub(reduced, '^/?%.%./', '')
 	end
-	return '/' .. path
+	return (isRelative and '' or '/') .. path
 end
 
 --- builds a new url by using the one given as parameter and resolving paths
@@ -424,7 +417,7 @@ function M:resolve(other)
 					other.query = self.query
 				end
 			else
-				other.path = absolutePath(self.path, other.path)
+				other.path = reducePath(self.path, other.path)
 			end
 		end
 		return other
@@ -440,7 +433,7 @@ function M:normalize()
 	end
 	if self.path then
 		local path = self.path
-		path = absolutePath(path, "")
+		path = reducePath(path, "")
 		-- normalize multiple slashes
 		path = string.gsub(path, "//+", "/")
 		self.path = path

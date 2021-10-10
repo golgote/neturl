@@ -1,10 +1,7 @@
 #!/usr/bin/env lua
 require 'Test.More'
 
-d = require'dumper'
-dump = function(str, var) print(d.dump(str, var)) end
-
-local url = require'neturl'
+local url = require 'net.url'
 
 local s
 local q
@@ -127,6 +124,7 @@ local test2 = {
 	["/foo/bar/../../../../baz"] = "/baz",
 	["/./../foo"] = "/foo",
 	["/../foo"] = "/foo",
+	["foo/../test"] = "test",
 }
 
 for k,v in pairs(test2) do
@@ -168,6 +166,10 @@ local test2 = {
 	["http://example.com?q=foo"] = "http://example.com/?q=foo",
 	["http://example.com/a/../a/b"] = "http://example.com/a/../a/b",
 	["http://example.com/a/./b"] = "http://example.com/a/./b",
+	["http://example.com/A/./B"] = "http://example.com/A/./B",
+	["http://rob:abcd1234@www.example.co.uk/path/index.html?query1=test&silly=willy&field[0]=zero&field[2]=two#test=hash&chucky=cheese"] = "http://rob:abcd1234@www.example.co.uk/path/index.html?query1=test&silly=willy&field[0]=zero&field[2]=two#test=hash&chucky=cheese",
+	["/test"] = "/test",
+	["foo/bar"] = "foo/bar",
 }
 
 for k,v in pairs(test2) do
