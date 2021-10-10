@@ -45,6 +45,7 @@ is("gopher://example.com/#lua", tostring(u), "Test fragment")
 
 -- other url tests can be found here:
 -- https://github.com/php/php-src/blob/5b01c4863fe9e4bc2702b2bbf66d292d23001a18/ext/standard/tests/strings/url_t.phpt
+-- https://github.com/php/php-src/blob/5b01c4863fe9e4bc2702b2bbf66d292d23001a18/ext/standard/tests/url/urls.inc
 
 u = url.parse("https://example.com\\uFF03@bing.com")
 is(nil, u.userinfo, "Removes invalid userinfo")
