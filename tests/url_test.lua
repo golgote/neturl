@@ -6,7 +6,7 @@ local url = require 'net.url'
 local s
 local q
 
-plan(14)
+plan(124)
 
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
@@ -43,6 +43,11 @@ is("gopher://example.com/", tostring(u), "Test scheme gopher")
 u.fragment = "lua"
 is("gopher://example.com/#lua", tostring(u), "Test fragment")
 
+-- other url tests can be found here:
+-- https://github.com/php/php-src/blob/5b01c4863fe9e4bc2702b2bbf66d292d23001a18/ext/standard/tests/strings/url_t.phpt
+
+u = url.parse("https://example.com\\uFF03@bing.com")
+is(nil, u.userinfo, "Removes invalid userinfo")
 
 local test1 = {
 	["g:h"] = "g:h",
@@ -119,7 +124,7 @@ local test2 = {
 	["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529#038;cpage=1#comment-783",
-	["http://www.foo.com/some +path/?args=foo%2Bbar"] = "http://www.foo.com/some +path/?args=foo+bar",
+	["http://www.foo.com/some +path/?args=foo%2Bbar"] = "http://www.foo.com/some%20%20path/?args=foo+bar",
 	["/foo/bar/../../../baz"] = "/baz",
 	["/foo/bar/../../../../baz"] = "/baz",
 	["/./../foo"] = "/foo",
@@ -166,10 +171,12 @@ local test2 = {
 	["http://example.com?q=foo"] = "http://example.com/?q=foo",
 	["http://example.com/a/../a/b"] = "http://example.com/a/../a/b",
 	["http://example.com/a/./b"] = "http://example.com/a/./b",
-	["http://example.com/A/./B"] = "http://example.com/A/./B",
-	["http://rob:abcd1234@www.example.co.uk/path/index.html?query1=test&silly=willy&field[0]=zero&field[2]=two#test=hash&chucky=cheese"] = "http://rob:abcd1234@www.example.co.uk/path/index.html?query1=test&silly=willy&field[0]=zero&field[2]=two#test=hash&chucky=cheese",
-	["/test"] = "/test",
-	["foo/bar"] = "foo/bar",
+	["http://example.com/A/./B"] = "http://example.com/A/./B", -- don't convert path case
+	["/test"] = "/test", -- keep absolute paths
+	["foo/bar"] = "foo/bar", -- keep relative paths
+	["https://google.com/Link%20with%20a%20space%20in%20it/"] = "https://google.com/Link%20with%20a%20space%20in%20it/",
+	["https://google.com/a%2fb%2fc/"] = "https://google.com/a%2Fb%2Fc/",
+	['//lua.org/path?query=1:2'] = "//lua.org/path?query=1%3A2",
 }
 
 for k,v in pairs(test2) do

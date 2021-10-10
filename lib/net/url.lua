@@ -271,7 +271,14 @@ function M:setAuthority(authority)
 				self.password = v
 				return ''
 		end)
-		self.user = userinfo
+		if string.find(userinfo, "^[%w%+%.]+$") then
+			self.user = userinfo
+		else
+			-- incorrect userinfo
+			self.userinfo = nil
+			self.user = nil
+			self.password = nil
+		end
 	end
 	return authority
 end
