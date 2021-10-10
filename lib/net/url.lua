@@ -8,8 +8,11 @@ local M = {}
 M.version = "1.0.0"
 
 --- url options
--- separator is set to `&` by default but could be anything like `&amp;amp;` or `;`
--- @todo Add an option to limit the size of the argument table
+-- - `separator` is set to `&` by default but could be anything like `&amp;amp;` or `;`
+-- - `cumulative_parameters` is false by default. If true, query parameters with the same name will be stored in a table.
+-- @todo Add option to limit the size of the argument table
+-- @todo Add option to limit the depth of the argument table
+-- @todo Add option to process dots in parameter names, ie. `param.filter=1`
 M.options = {
 	separator = '&',
 	cumulative_parameters = false
