@@ -5,17 +5,34 @@
 -- @alias	M
 
 local M = {}
-M.version = "1.0.0"
+M.version = "1.1.0"
 
 --- url options
 -- - `separator` is set to `&` by default but could be anything like `&amp;amp;` or `;`
 -- - `cumulative_parameters` is false by default. If true, query parameters with the same name will be stored in a table.
+-- - `legal_in_path` is a table of characters that will not be url encoded in path components
+-- - `legal_in_query` is a table of characters that will not be url encoded in query values. Query parameters only support a small set of legal characters (-_.).
+-- - `query_plus_is_space` is true by default, so a plus sign in a query value will be converted to %20 (space), not %2B (plus)
 -- @todo Add option to limit the size of the argument table
 -- @todo Add option to limit the depth of the argument table
 -- @todo Add option to process dots in parameter names, ie. `param.filter=1`
 M.options = {
 	separator = '&',
-	cumulative_parameters = false
+	cumulative_parameters = false,
+	legal_in_path = {
+		[":"] = true, ["-"] = true, ["_"] = true, ["."] = true,
+		["!"] = true, ["~"] = true, ["*"] = true, ["'"] = true,
+		["("] = true, [")"] = true, ["@"] = true, ["&"] = true,
+		["="] = true, ["$"] = true, [","] = true,
+		[";"] = true
+	},
+	legal_in_query = {
+		[":"] = true, ["-"] = true, ["_"] = true, ["."] = true,
+		[","] = true, ["!"] = true, ["~"] = true, ["*"] = true,
+		["'"] = true, [";"] = true, ["("] = true, [")"] = true,
+		["@"] = true, ["$"] = true,
+	},
+	query_plus_is_space = true
 }
 
 --- list of known and common scheme ports
@@ -51,41 +68,42 @@ M.services = {
 	videotex = 516
 }
 
-local legal = {
-	["-"] = true, ["_"] = true, ["."] = true, ["!"] = true,
-	["~"] = true, ["*"] = true, ["'"] = true, ["("] = true,
-	[")"] = true, [":"] = true, ["@"] = true, ["&"] = true,
-	["="] = true, ["+"] = true, ["$"] = true, [","] = true,
-	[";"] = true -- can be used for parameters in path
-}
-
 local function decode(str)
-	local str = str:gsub('+', ' ')
 	return (str:gsub("%%(%x%x)", function(c)
-			return string.char(tonumber(c, 16))
+		return string.char(tonumber(c, 16))
 	end))
 end
 
-local function encode(str)
-	return (str:gsub("([^A-Za-z0-9%_%.%-%~])", function(v)
-			return string.upper(string.format("%%%02x", string.byte(v)))
-	end))
-end
-
--- for query values, prefer + instead of %20 for spaces
-local function encodeValue(str)
-	local str = encode(str)
-	return str:gsub('%%20', '+')
-end
-
-local function encodeSegment(s)
-	local legalEncode = function(c)
-		if legal[c] then
-			return c
+local function encode(str, legal)
+	return (str:gsub("([^%w])", function(v)
+		if legal[v] then
+			return v
 		end
-		return encode(c)
+		return string.upper(string.format("%%%02x", string.byte(v)))
+	end))
+end
+
+-- for query values, + can mean space if configured as such
+local function decodeValue(str)
+	if M.options.query_plus_is_space then
+		str = str:gsub('+', ' ')
 	end
-	return s:gsub('([^a-zA-Z0-9])', legalEncode)
+	return decode(str)
+end
+
+local function concat(a, b)
+	if type(a) == 'table' then
+		return a:build() .. b
+	else
+		return a .. b:build()
+	end
+end
+
+function M:addSegment(path)
+	if type(path) == 'string' then
+		self.path = self.path .. '/' .. encode(path:gsub("^/+", ""), M.options.legal_in_path)
+	end
+	return self
 end
 
 --- builds the url
@@ -154,7 +172,7 @@ function M.buildQuery(tab, sep, key)
 	end)
 	for _,name in ipairs(keys) do
 		local value = tab[name]
-		name = encode(tostring(name))
+		name = encode(tostring(name), {["-"] = true, ["_"] = true, ["."] = true})
 		if key then
 			if M.options.cumulative_parameters and string.find(name, '^%d+$') then
 				name = tostring(key)
@@ -165,7 +183,7 @@ function M.buildQuery(tab, sep, key)
 		if type(value) == 'table' then
 			query[#query+1] = M.buildQuery(value, sep, name)
 		else
-			local value = encodeValue(decode(tostring(value)))
+			local value = encode(tostring(value), M.options.legal_in_query)
 			if value ~= "" then
 				query[#query+1] = string.format('%s=%s', name, value)
 			else
@@ -190,14 +208,14 @@ function M.parseQuery(str, sep)
 
 	local values = {}
 	for key,val in str:gmatch(string.format('([^%q=]+)(=*[^%q=]*)', sep, sep)) do
-		local key = decode(key)
+		local key = decodeValue(key)
 		local keys = {}
 		key = key:gsub('%[([^%]]*)%]', function(v)
 				-- extract keys between balanced brackets
 				if string.find(v, "^-?%d+$") then
 					v = tonumber(v)
 				else
-					v = decode(v)
+					v = decodeValue(v)
 				end
 				table.insert(keys, v)
 				return "="
@@ -212,11 +230,11 @@ function M.parseQuery(str, sep)
 		if #keys > 0 and type(values[key]) ~= 'table' then
 			values[key] = {}
 		elseif #keys == 0 and type(values[key]) == 'table' then
-			values[key] = decode(val)
+			values[key] = decodeValue(val)
 		elseif M.options.cumulative_parameters
 			and type(values[key]) == 'string' then
 			values[key] = { values[key] }
-			table.insert(values[key], decode(val))
+			table.insert(values[key], decodeValue(val))
 		end
 
 		local t = values[key]
@@ -231,10 +249,11 @@ function M.parseQuery(str, sep)
 				t[k] = {}
 			end
 			if i == #keys then
-				t[k] = decode(val)
+				t[k] = val
 			end
 			t = t[k]
 		end
+
 	end
 	setmetatable(values, { __tostring = M.buildQuery })
 	return values
@@ -363,12 +382,14 @@ function M.parse(url)
 		return ''
 	end)
 
-	comp.path = url:gsub("([^/]+)", function (s) return encodeSegment(decode(s)) end)
+	comp.path = url:gsub("([^/]+)", function (s) return encode(decode(s), M.options.legal_in_path) end)
 
 	setmetatable(comp, {
 		__index = M,
-		__tostring = M.build}
-	)
+		__tostring = M.build,
+		__concat = concat,
+		__div = M.addSegment
+	})
 	return comp
 end
 

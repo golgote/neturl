@@ -6,15 +6,15 @@ local url = require 'net.url'
 local s
 local q
 
-plan(127)
+plan(134)
 
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
 is("http://www.example.com/?net=url", tostring(u), "Test new query variable")
 
 u.query.net = "url 2nd try"
-is("net=url+2nd+try", tostring(u.query), "Test build query")
-is("http://www.example.com/?net=url+2nd+try", tostring(u), "Test new query variable 2")
+is("net=url%202nd%20try", tostring(u.query), "Test build query")
+is("http://www.example.com/?net=url%202nd%20try", tostring(u), "Test new query variable 2")
 
 u = url.parse("http://www.example.com/?last=mansion&first=bertrand&test=more")
 is("http://www.example.com/?first=bertrand&last=mansion&test=more", tostring(u), "Test sorted query")
@@ -134,7 +134,6 @@ local test2 = {
 	["http://www.foo.com/%7ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/%7Ebar"] = "http://www.foo.com/~bar",
 	["http://www.foo.com/?p=529&#038;cpage=1#comment-783"] = "http://www.foo.com/?p=529#038;cpage=1#comment-783",
-	["http://www.foo.com/some +path/?args=foo%2Bbar"] = "http://www.foo.com/some%20%20path/?args=foo+bar",
 	["/foo/bar/../../../baz"] = "/baz",
 	["/foo/bar/../../../../baz"] = "/baz",
 	["/./../foo"] = "/foo",
@@ -184,9 +183,18 @@ local test2 = {
 	["http://example.com/A/./B"] = "http://example.com/A/./B", -- don't convert path case
 	["/test"] = "/test", -- keep absolute paths
 	["foo/bar"] = "foo/bar", -- keep relative paths
+	-- encoding tests
+	["https://google.com/Link with a space in it/"] = "https://google.com/Link%20with%20a%20space%20in%20it/",
 	["https://google.com/Link%20with%20a%20space%20in%20it/"] = "https://google.com/Link%20with%20a%20space%20in%20it/",
 	["https://google.com/a%2fb%2fc/"] = "https://google.com/a%2Fb%2Fc/",
-	['//lua.org/path?query=1:2'] = "//lua.org/path?query=1%3A2",
+	['//lua.org/path?query=1:2'] = "//lua.org/path?query=1:2",
+	["http://www.foo.com/some +path/?args=foo%2Bbar"] = "http://www.foo.com/some%20%2Bpath/?args=foo%2Bbar",
+	-- by default, a "plus" sign in query value is encoded as %20
+	["http://www.foo.com/?args=foo+bar"] = "http://www.foo.com/?args=foo%20bar",
+	-- by default, a space in query value is encoded as %20
+	["http://www.foo.com/?args=foo bar"] = "http://www.foo.com/?args=foo%20bar",
+	["http://www.foo.com/some%20%20path/?args=foo%20bar"] = "http://www.foo.com/some%20%20path/?args=foo%20bar",
+	["http://www.foo.com/some%2B%2Bpath/?args=foo%2Bbar"] = "http://www.foo.com/some%2B%2Bpath/?args=foo%2Bbar",
 }
 
 for k,v in pairs(test2) do
@@ -194,3 +202,17 @@ for k,v in pairs(test2) do
 	is(tostring(u), v, "Test rebuild and clean '".. k.."' => '"..v..' => '..tostring(u))
 end
 
+
+local test3 = {
+	-- can also encode plus sign as %2B instead of space (option)
+	["http://www.foo.com/?args=foo+bar"] = "http://www.foo.com/?args=foo%2Bbar",
+	-- can also leave plus sign alone in path (option)
+	["http://www.foo.com/some +path/?args=foo+bar"] = "http://www.foo.com/some%20+path/?args=foo%2Bbar",
+}
+
+for k,v in pairs(test3) do
+	url.options.legal_in_path["+"] = true;
+	url.options.query_plus_is_space = false;
+	local u = url.parse(k)
+	is(tostring(u), v, "Test plus sign '".. k.."' => '"..v..' => '..tostring(u))
+end
