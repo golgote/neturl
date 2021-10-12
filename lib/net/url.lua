@@ -78,7 +78,10 @@ local function encodeValue(str)
 	return str:gsub('%%20', '+')
 end
 
-local function encodeSegment(s)
+--- url encodes a path segment
+-- @param s The path segment
+-- @return a string representing the url encoded path segment
+function M.encodeSegment(s)
 	local legalEncode = function(c)
 		if legal[c] then
 			return c
@@ -363,7 +366,7 @@ function M.parse(url)
 		return ''
 	end)
 
-	comp.path = url:gsub("([^/]+)", function (s) return encodeSegment(decode(s)) end)
+	comp.path = url:gsub("([^/]+)", function (s) return M.encodeSegment(decode(s)) end)
 
 	setmetatable(comp, {
 		__index = M,
