@@ -249,7 +249,7 @@ function M.parseQuery(str, sep)
 				t[k] = {}
 			end
 			if i == #keys then
-				t[k] = val
+				t[k] = decodeValue(val)
 			end
 			t = t[k]
 		end
