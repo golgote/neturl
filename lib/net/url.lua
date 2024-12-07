@@ -5,7 +5,7 @@
 -- @alias	M
 
 local M = {}
-M.version = "1.1.1"
+M.version = "1.2"
 
 --- url options
 -- - `separator` is set to `&` by default but could be anything like `&amp;amp;` or `;`
