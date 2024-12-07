@@ -6,7 +6,7 @@ local url = require 'net.url'
 local s
 local q
 
-plan(134)
+plan(137)
 
 local u = url.parse("http://www.example.com")
 u.query.net = "url"
@@ -58,6 +58,12 @@ is(u.host, nil, "Removes invalid hostname")
 
 u = url.parse("http://[56FE::2159:5BBC::6594]:8080/test")
 is(u.host, nil, "Removes invalid hostname")
+
+-- Ticket #26 (just making sure it's not an issue)
+u = url.parse("http://example.com//a/b/c"):normalize()
+is(u.host, "example.com", "Hostname followed by double slashes")
+is(u.path, "/a/b/c", "Path with hostname followed by double slashes")
+
 
 local test1 = {
 	["g:h"] = "g:h",
@@ -139,6 +145,8 @@ local test2 = {
 	["/./../foo"] = "/foo",
 	["/../foo"] = "/foo",
 	["foo/../test"] = "test",
+	-- Ticket #26 (just making sure it's not an issue)
+	["http://example.com//a/b/c"] = "http://example.com/a/b/c",
 }
 
 for k,v in pairs(test2) do
@@ -216,3 +224,4 @@ for k,v in pairs(test3) do
 	local u = url.parse(k)
 	is(tostring(u), v, "Test plus sign '".. k.."' => '"..v..' => '..tostring(u))
 end
+
