@@ -167,8 +167,8 @@ function M.buildQuery(tab, sep, key)
 		keys[#keys+1] = k
 	end
 	table.sort(keys, function (a, b)
-  		local function padnum(n, rest) return ("%03d"..rest):format(tonumber(n)) end
-  		return tostring(a):gsub("(%d+)(%.)",padnum) < tostring(b):gsub("(%d+)(%.)",padnum)
+		local function padnum(n, rest) return ("%03d"..rest):format(tonumber(n)) end
+		return tostring(a):gsub("(%d+)(%.)",padnum) < tostring(b):gsub("(%d+)(%.)",padnum)
 	end)
 	for _,name in ipairs(keys) do
 		local value = tab[name]
