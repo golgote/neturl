@@ -207,7 +207,7 @@ function M.parseQuery(str, sep)
 	end
 
 	local values = {}
-	for key,val in str:gmatch(string.format('([^%s=]+)(=*[^%s=]*)', sep, sep)) do
+	for key,val in str:gmatch(string.format('([^%s=]+)(=*[^%s]*)', sep, sep)) do
 		local key = decodeValue(key)
 		local keys = {}
 		key = key:gsub('%[([^%]]*)%]', function(v)
